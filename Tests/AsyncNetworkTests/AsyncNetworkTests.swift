@@ -1,122 +1,14 @@
 import XCTest
-@testable import Zeus
-@testable import AsyncZeus
+@testable import AsyncNetwork
 
 #if canImport(Async)
 import Async
 #endif
 
-final class ZeusTests: XCTestCase {
+final class AsyncNetworkTests: XCTestCase {
 #if canImport(Async)
     
-    func testTask() -> AsyncTask<Any, any Error> {
-        return AsyncTask<Any, any Error> { resultClosure in
-            resultClosure(.failure(AsyncError.resultError))
-        }
-        
-        // swift async 使用
-    }
-
-    func testSequentialRequestsOptions1() throws {
-        Async.Task { operation in
-            let result = operation.await { resultClosure in
-                resultClosure(.failure(AsyncError.resultError))
-            }
-            
-            switch result {
-            case .success(let success):
-                print(success)
-            case .failure(let error):
-                print(error)
-            }
-            
-            let task = AsyncTask<Any, AsyncError> { resultClosure in
-                resultClosure(.failure(AsyncError.resultError))
-            }
-            /// 
-            /// func testTask() -> AsyncTask<Any, any Error> {
-            ///     return AsyncTask<Any, any Error> { resultClosure in
-            ///         resultClosure(.failure(AsyncError.resultError))
-            ///     }
-            /// }
-            ///
-            /// let task = testTask()
-            let taskResult = operation.await(task)
-            switch taskResult {
-            case .success(let success):
-                print(success)
-            case .failure(let error):
-                print(error)
-            case .none:
-                print("nill")
-            }
-            
-            if let value = task.value {
-                print(value)
-            }
-            
-            if let error = task.error {
-                print(error)
-            }
-        }
-     
-        expectation(timeout: 20, description: "testSequentialRequestsOptions") { expectation in
-            Async.Task { operation in
-            
-                let id = "100"
-                let token = "KNSkjdnjjasdasjkwklasdan"
-                
-                let getRequest = GetRequest(id: id, token: token).responseDecodeableTask()
-                let getResult = operation.await(getRequest)
-                switch getResult {
-                case .success(let success):
-                    print(success)
-                case .failure(let error):
-                    print(error)
-                case .none:
-                    print("nil")
-                }
-                guard case let .success(getRespond) = getResult else {
-                    XCTAssert(false, "Get Request Failed")
-                    return
-                }
-                
-                let getRespondResult = getRespond
-                print("Get Result: \(getRespondResult)")
-                XCTAssertNotNil(getRespondResult, "Get Request Failed")
-                let getArgs = getRespondResult.args
-                XCTAssertNotNil(getArgs, "Get Request Failed")
-                let getId = getArgs.id
-                let getToken = getArgs.token
-                
-                XCTAssertNotNil(getId, "Get Request Failed, get id is nil")
-                XCTAssertNotNil(getToken, "Get Request Failed, get token is nil")
-                
-                let postRequest = PostRequest(id: getId, token: getToken).responseDecodeableTask()
-                let postResult = operation.await(postRequest)
-                guard case let .success(postRespond) = postResult else {
-                    XCTAssert(false, "Post Request Failed")
-                    return
-                }
-                let postRespondResult = postRespond
-                XCTAssertNotNil(postRespondResult, "Post Request Failed")
-                let postArgs = postRespondResult.form
-
-                let postId = postArgs.id
-                let postToken = postArgs.token
-                
-                XCTAssertNotNil(postId, "Post Request Failed, get id is nil")
-                XCTAssertNotNil(postToken, "Post Request Failed, get token is nil")
-                print("id: \(postId), token: \(postToken)")
-                operation.main {
-                    // reload view
-                    
-                    expectation.fulfill()
-                }
-            }
-        }
-    }
-    
+ 
     func testSequentialRequestsOptions() throws {
         expectation(timeout: 20, description: "testSequentialRequestsOptions") { expectation in
             Async.Task { operation in
@@ -124,7 +16,7 @@ final class ZeusTests: XCTestCase {
                 let id = "100"
                 let token = "KNSkjdnjjasdasjkwklasdan"
                 
-                let getTask = GetRequest(id: id, token: token).responseDecodeableTask()
+                let getTask = GetRequest(id: id, token: token).responseDecodeTask()
                 
                 let getResult = operation.await(getTask)
                 guard case let .success(getRespond) = getResult else {
@@ -142,7 +34,7 @@ final class ZeusTests: XCTestCase {
                 XCTAssertNotNil(getId, "Get Request Failed, get id is nil")
                 XCTAssertNotNil(getToken, "Get Request Failed, get token is nil")
 
-                let postTask = PostRequest(id: getId, token: getToken).responseDecodeableTask()
+                let postTask = PostRequest(id: getId, token: getToken).responseDecodeTask()
                 let postResult = operation.await(postTask)
                 guard case let .success(postRespond) = postResult else {
                     XCTAssert(false, "Post Request Failed")
@@ -173,7 +65,7 @@ final class ZeusTests: XCTestCase {
                 let id = "100"
                 let token = "KNSkjdnjjasdasjkwklasdan"
                 
-                let getRequest = GetRequest(id: id, token: token).responseDecodeableTask()
+                let getRequest = GetRequest(id: id, token: token).responseDecodeTask()
                                 
                 let getResult = operation.await(getRequest)
                 guard case let .success(getObject) = getResult else {
@@ -190,7 +82,7 @@ final class ZeusTests: XCTestCase {
                 XCTAssertNotNil(getToken, "Get Request Failed, get token is nil")
                 print("Get: id: \(getId), token: \(getToken)")
 
-                let postRequest = PostRequest(id: getId, token: getToken).responseDecodeableTask()
+                let postRequest = PostRequest(id: getId, token: getToken).responseDecodeTask()
                 let postResult = operation.await(postRequest)
                 guard case let .success(postObject) = postResult else {
                     XCTAssert(false, "Post Request Failed")
@@ -220,8 +112,8 @@ final class ZeusTests: XCTestCase {
             Async.Task { operation in
                 let id = "100"
                 let token = "KNSkjdnjjasdasjkwklasdan"
-                let getTask = GetRequest(id: id, token: token).responseDecodeableTask()
-                let postTask = PostRequest(id: id, token: token).responseDecodeableTask()
+                let getTask = GetRequest(id: id, token: token).responseDecodeTask()
+                let postTask = PostRequest(id: id, token: token).responseDecodeTask()
                 let results = operation.await([getTask, postTask])
                 XCTAssertNotNil(results, "Concurrent Requests Failed")
                 XCTAssertNotNil(getTask.value, "Concurrent Request Get Failed")
@@ -248,8 +140,8 @@ final class ZeusTests: XCTestCase {
             Async.Task { operation in
                 let id = "100"
                 let token = "KNSkjdnjjasdasjkwklasdan"
-                let getTask = GetRequest(id: id, token: token).responseDecodeableTask()
-                let postTask = PostRequest(id: id, token: token).responseDecodeableTask()
+                let getTask = GetRequest(id: id, token: token).responseDecodeTask()
+                let postTask = PostRequest(id: id, token: token).responseDecodeTask()
                 
                 let results = operation.await([getTask, postTask])
                 XCTAssertNotNil(results, "Concurrent Requests Failed")
@@ -277,8 +169,8 @@ final class ZeusTests: XCTestCase {
             Async.Task { operation in
                 let id = "100"
                 let token = "KNSkjdnjjasdasjkwklasdan"
-                let getTask = GetRequest(id: id, token: token).responseDecodeableTask()
-                let postTask = PostRequest(id: id, token: token).responseDecodeableTask()
+                let getTask = GetRequest(id: id, token: token).responseDecodeTask()
+                let postTask = PostRequest(id: id, token: token).responseDecodeTask()
                 let results = operation.await([getTask, postTask])
                 XCTAssertNotNil(results, "Concurrent Requests Failed")
                 XCTAssertNotNil(getTask.value, "Concurrent Request Get Failed")
@@ -315,10 +207,10 @@ final class ZeusTests: XCTestCase {
         ]
         
         let data = try JSONSerialization.data(withJSONObject: dictionary)
-        let mappingData = try data.zeus.mapping(by: "respData")
+        let mappingData = try data.mapping(by: "respData")
         XCTAssertNotNil(mappingData)
         do {
-            let info = try data.zeus.mapping(by: "respData.info")
+            let info = try data.mapping(by: "respData.info")
             XCTAssertNotNil(info)
         } catch {
             print(error)
@@ -339,7 +231,7 @@ class GetRequest: Requestable, ResponseDecodable {
         "/get"
     }
     
-    func method() -> Zeus.Method {
+    func method() -> AsyncNetwork.Method {
         return .get
     }
     
@@ -367,7 +259,7 @@ class PostRequest: Requestable, ResponseDecodable {
         "/post"
     }
     
-    func method() -> Zeus.Method {
+    func method() -> AsyncNetwork.Method {
         return .post
     }
     

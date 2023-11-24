@@ -1,7 +1,7 @@
 # AsyncNetwork
-AsyncNetwork is an asynchronous (Async) network request library that creates network requests for protocols and provides a distributed way to manage networks, making network requests faster and easier.
+`AsyncNetwork` is an asynchronous (`Async`) network request library that creates network requests for protocols and provides a distributed way to manage networks, making network requests faster and easier.
 
-Using AsyncNetwork, you can easily create and manage network requests without worrying about the underlying network details. The library uses an asynchronous programming model, allowing you to write non-blocking code that does not block the main thread and can efficiently utilize system resources.
+Using `AsyncNetwork`, you can easily create and manage network requests without worrying about the underlying network details. The library uses an asynchronous programming model, allowing you to write non-blocking code that does not block the main thread and can efficiently utilize system resources.
 
 ## [Installation](https://github.com/KKLater/AsyncNetwork#installation)
 

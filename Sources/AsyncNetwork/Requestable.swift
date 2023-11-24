@@ -1,54 +1,79 @@
 //
-//  File.swift
+//  Requestable.swift
 //  
 //
 //  Created by 罗树新 on 2023/11/14.
 //
+//  MIT License
+//
+//  Copyright (c) 2023 Later
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
 
 import Foundation
 
+/// Request configuration protocol
+/// Follow the protocol of the class or struct, implement its related protocol methods. 
+/// Its instances can construct Request instances and initiate requests.
+/// Generally, a class or struct only supports the completion of one request business.
 public protocol Requestable: JSONEncodable {
             
-    /// 请求地址基础信息
+    /// Request address basic information
     ///
     ///     https://:scheme
     ///
     func baseUrl() -> String
     
-    /// 请求路径
+    /// Request path
     ///
     ///     /v1/get
     func path() -> String
     
-    /// 请求方法
-    func method() -> Zeus.Method
+    /// Request Method
+    func method() -> AsyncNetwork.Method
     
-    /// 超时
+    /// Request timeout configuration
     func timeoutInterval() -> TimeInterval
     
-    /// 请求header信息
+    /// Request header information
     func header() -> Header?
 
-    /// 请求响应链
-    /// 请求发起前,对请求做通用拦截处理。
-    /// 其中任何一个拦截器，返回 `Result`，拦截中断。请求直接返回 `Result`。
-    /// 如果需要请求继续，返回 `nil`
+    /// Request response chain
+    /// Perform general interception processing on the request before it is initiated.
+    /// Any of these interceptors returns a Result to interrupt the request. The request returns directly to the Result.
+    /// If you need to request to continue, return nil
     ///
-    /// - Parameter request: 需要做处理的请求
+    /// - Parameter request: The request to be processed
     func requestHandlers() -> [RequestHandleable]
     
-    /// 请求结果处理响应链
-    /// 请求响应后，对请求结果的拦截处理。
-    /// 其中拦截器，返回 `Result`，如果为 `success`，后续拦截器会迭代 新的 `Result`。如果返回 `failure`，迭代终止。
+    /// Request result processing response chain
+    /// After the request response, intercept and process the request result.
+    /// The interceptor returns a Result, if it is success, the subsequent interceptors will iterate the new Result. If it returns failure, the iteration will terminate.
     ///
-    /// - Parameter response: 请求响应
+    /// - Parameter response: request response
     func responseHandlers() -> [ResponseHandleable]
 
-    /// 请求发起前的校验
+    /// Verification before request initiation
     func validate() -> Error?
     
-    /// 请求参数
-    /// 默认使用数据对象, json encode 序列化后，作为参数
+    /// Request parameters
+    /// Use the data object by default, after serialization with json encode, as the parameter
     ///
     /// ```swift
     /// struct GetRequest: Requestable {
@@ -61,10 +86,10 @@ public protocol Requestable: JSONEncodable {
     ///         self.name = name
     ///         self.city = city
     ///     }
-    ///     /* 其他配置 */
+    ///     /* Other Configurations */
     /// }
     ///
-    /// // 请求
+    /// // Build a request instance
     /// let request = GetRequest(id: "111", name: "KK", city: "bj")
     ///
     /// let parameters = request.parameters()
@@ -77,15 +102,15 @@ public protocol Requestable: JSONEncodable {
     /// */
     /// print(parameters)
     /// ```
-    /// - Returns: 请求参数
+    /// - Returns: Request Parameters
     func parameters() -> Parameters
     
-    /// 配置请求结果解析 key
-    /// 配置时，按照 key 做解析处理。多层 `key` 需要使用 `.` 拼接。不做配置，全部作为返回结果。默认：nil
+    /// Configure the request result parsing key
+    /// When configuring, parse according to the key. Multi-level keys need to be concatenated using a`.`. If no configuration is made, all will be returned as the result. Default: `nil`
     /// - Note:
     ///
-    /// 1. 单层 `key`
-    /// 服务返回数据：
+    /// 1. JSON level with only one layer of key
+    /// Service return data:
     /// ```json
     /// {
     ///     "respCode": 0,
@@ -95,13 +120,13 @@ public protocol Requestable: JSONEncodable {
     ///     }
     /// }
     /// ```
-    /// `resultKey` 配置:
+    /// `resultKey` implementation:
     /// ```swift
     /// func resultKey() -> String? {
     ///     return "respData"
     /// }
     /// ```
-    /// 数据返回解析内容:
+    /// Data returned parsing content:
     /// ```json
     /// {
     ///     "name":"KK",
@@ -109,8 +134,8 @@ public protocol Requestable: JSONEncodable {
     /// }
     /// ```
     ///
-    /// 2. 多层 `key`
-    /// 服务返回数据:
+    /// 2. key when the JSON hierarchy is multi-level
+    /// Service return data
     /// ```json
     /// {
     ///     "respCode": 0,
@@ -122,13 +147,13 @@ public protocol Requestable: JSONEncodable {
     ///     }
     /// }
     /// ```
-    /// `resultKey` 配置:
+    /// `resultKey` implementation:
     /// ```swift
     /// func resultKey() -> String? {
     ///     return "respData.contents"
     /// }
     /// ```
-    /// 数据返回解析内容:
+    /// Data returned parsing content:
     /// ```json
     /// {
     ///     "name":"KK",
@@ -136,13 +161,13 @@ public protocol Requestable: JSONEncodable {
     /// }
     /// ```
     ///
-    /// - Returns: 请求结果解析key。
+    /// - Returns: Resolve the key of the request result.
     func resultKey() -> String?
     
-    /// 请求参数配置key
+    /// Request parameter configuration key
     ///
     /// - Note:
-    /// 对象类：
+    /// A Request Example
     /// ```swift
     /// struct GetRequest: Getable, APISession {
     ///     public func path() -> String {
@@ -164,12 +189,12 @@ public protocol Requestable: JSONEncodable {
     /// }
     /// ```
     ///
-    /// 未配置 `requestKey` 时，请求参数配置为：
+    /// When the 'requestKey' is not configured, the request parameter configuration:
     /// ```ssh
     /// id=112&token=s_token_112
     /// ```
     ///
-    /// 配置 `requestKey` :
+    /// When configuring the 'requestKey', configure the request parameters:
     ///
     /// ```swift
     /// func requestKey() -> String? {
@@ -177,33 +202,34 @@ public protocol Requestable: JSONEncodable {
     /// }
     /// ```
     ///
-    /// 请求参数配置：
+    /// Request parameter configuration:
     ///
     /// ```shell
     /// contents=%7B%22id%22%3A%22112%22%2C%22token%22%3A%22s_token_112%22%7D
     /// ```
     ///
-    /// - Returns: 请求参数配置。配置后，对象解析数据参数，会配置到该 `key`，重组为请求数据参数。默认: nil
+    /// - Returns: Request parameter configuration. After configuration, the object parsing data parameter will be configured to the key and reorganized into the request data parameter. Default: `nil`
     ///
     func requestKey() -> String?
 }
 
 public extension Requestable {
-    /// 超时
+    /// Request timeout configuration
     func timeoutInterval() -> TimeInterval { 20 }
 
-    /// 请求header信息
+    /// Request header information
     func header() -> Header? { nil }
 
-    /// 请求响应链
+    /// Request chain
     func requestHandlers() -> [RequestHandleable] { [] }
         
-    /// 请求结果处理响应链
+    /// Request response chain
     func responseHandlers() -> [ResponseHandleable] { [] }
 
-    /// 请求发起前的校验
+    /// Verification before request initiation
     func validate() -> Error? { nil }
         
+    /// Request Parameters
     func parameters() -> Parameters {
         guard let requestKey = requestKey() else {
             guard let dic = try? json() as? Parameters else { return [:] }
@@ -217,10 +243,11 @@ public extension Requestable {
     }
     
     
+    /// Configure the request result parsing key
     func resultKey() -> String? {
         return nil
     }
-    
+    /// Request parameter configuration key
     func requestKey() -> String? {
         return nil
     }
@@ -273,19 +300,25 @@ extension Requestable {
 
 public extension Requestable {
     
-    /// 请求二进制数据
-    /// `token` 请求过程中，临时存储使用。请求过程中，可以依据 `token` 取消请求。
-    /// 
+    /// Request binary data
+    /// token is used for temporary storage during the request process. During the request process, you can cancel the request based on the token. When the request fails, you can use the token to retry the request or cancel the request.
+    ///
     ///
     /// - Parameters:
-    ///   - token: 请求 token
-    ///   - completion: 请求结果回调
+    /// - token: request token
+    /// - completion: callback for request result
     func responseData(token: String? = nil, completion: @escaping (Result<Response<Data>, Error>) -> Void) {
         let request = Request(requestOptions: self, token: token)
         request.execute(completion: completion)
     }
     
-    func responseJson(token: String? = nil, completion: @escaping (Result<Response<Any>, Error>) -> Void) {
+    /// Request JSON data
+    /// token is used for temporary storage during the request process. During the request process, you can cancel the request based on the token. When the request fails, you can use the token to retry the request or cancel the request.
+    ///
+    /// - Parameters:
+    ///   - token: request token
+    ///   - completion: callback for request result
+    func responseJSON(token: String? = nil, completion: @escaping (Result<Response<Any>, Error>) -> Void) {
         let request = Request(requestOptions: self, token: token)
         request.execute { result in
             switch result {
@@ -313,6 +346,14 @@ public extension Requestable {
 }
 
 public extension Requestable where Self: ResponseDecodable {
+    
+    /// Request Decodable result data, the request configuration needs to follow the ResponseDecodable protocol and configure the ResponseType
+    /// Only requests that conform to the ResponseDecodable protocol can directly obtain decodable data
+    /// Token is used for temporary storage during the request process. During the request process, you can cancel the request based on the token. When the request fails, you can use the token to retry the request or cancel the request.
+    ///
+    /// - Parameters:
+    ///   - token: request token
+    ///   - completion: callback for request result
     func responseDecodable(token: String? = nil, completion: @escaping (Result<Response<ResponseType>, Error>) -> Void) {
         let request = Request(requestOptions: self, token: token)
         request.execute { result in
@@ -342,56 +383,56 @@ public extension Requestable where Self: ResponseDecodable {
 
 }
 
-/// Connect 请求协议
+/// Connect request, the request method is `.connect`
 public protocol Connectable: Requestable {}
 public extension Connectable {
-    func method() -> Zeus.Method { .connect }
+    func method() -> AsyncNetwork.Method { .connect }
 }
 
-/// Delete 请求协议
+/// Delete request, the request method is `.delete`
 public protocol Deletable: Requestable {}
 public extension Deletable {
-    func method() -> Zeus.Method { .delete }
+    func method() -> AsyncNetwork.Method { .delete }
 }
 
-/// Get 请求协议
+/// Get request, the request method is `.get`
 public protocol Getable: Requestable {}
 public extension Getable {
-    func method() -> Zeus.Method { .get }
+    func method() -> AsyncNetwork.Method { .get }
 }
 
-/// Head 请求协议
+/// Head request, the request method is `.head`
 public protocol Headable: Requestable {}
 public extension Headable {
-    func method() -> Zeus.Method { .head }
+    func method() -> AsyncNetwork.Method { .head }
 }
 
-/// Options 请求协议
+/// Options request, the request method is `.options`
 public protocol Optionsable: Requestable {}
 public extension Optionsable {
-    func method() -> Zeus.Method { .options }
+    func method() -> AsyncNetwork.Method { .options }
 }
 
-/// Patch 请求协议
+/// Patch request, the request method is `.patch`
 public protocol Patchable: Requestable {}
 public extension Patchable {
-    func method() -> Zeus.Method { .patch }
+    func method() -> AsyncNetwork.Method { .patch }
 }
 
-/// Post 请求协议
+/// Post request, the request method is `.post`
 public protocol Postable: Requestable {}
 public extension Postable {
-    func method() -> Zeus.Method { .post }
+    func method() -> AsyncNetwork.Method { .post }
 }
 
-/// Put 请求斜体
+/// Put request, the request method is `.put`
 public protocol Putable: Requestable {}
 public extension Putable {
-    func method() -> Zeus.Method { .put }
+    func method() -> AsyncNetwork.Method { .put }
 }
 
-/// trace 请求斜体
+/// Trace request, the request method is `.trace`
 public protocol Traceable: Requestable {}
 public extension Traceable {
-    func method() -> Zeus.Method { .trace }
+    func method() -> AsyncNetwork.Method { .trace }
 }

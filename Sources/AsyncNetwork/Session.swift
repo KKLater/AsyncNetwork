@@ -1,9 +1,30 @@
 //
-//  File.swift
-//  
+//  Session.swift
+//
 //
 //  Created by 罗树新 on 2023/7/1.
 //
+//  MIT License
+//
+//  Copyright (c) 2023 Later
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
 
 import Foundation
 import Alamofire
@@ -11,27 +32,7 @@ import Alamofire
 public class Session {
     
     public static let shared = Session()
-
-    public func cancel(for cancelToken: String) {
-        var requests = self.requests
-        if let request = requests[cancelToken] {
-            request.cancel()
-            requests.removeValue(forKey: cancelToken)
-            self.requests = requests
-        }
-    }
-    
-    public func cancelAll() {
-        var requests = self.requests
-
-        sessionManager.cancelAllRequests()
-        requests.removeAll()
-        self.requests = requests
-    }
-    
-    
-    private var requests = [String: DataRequest]()
-    
+ 
     private var sessionManager: Alamofire.Session
     
     private init() {
@@ -41,7 +42,7 @@ public class Session {
         sessionManager = Alamofire.Session(configuration: config)
     }
     
-    public func execute(request: Zeus.Request, completionHandler: @escaping (Result<Response<Data>, Error>) -> Void)  {
+    public func execute(request: AsyncNetwork.Request, completionHandler: @escaping (Result<Response<Data>, Error>) -> Void)  {
         
         
         let tUrl = request.url
@@ -50,14 +51,12 @@ public class Session {
         let tHeader = HTTPHeaders(request.headers)
         
  
-        /// 发起网络请求
         let afRequest = sessionManager
             .request(tUrl, method: tMethod, parameters: tParameters, headers: tHeader, requestModifier: { aRequest in
                 aRequest.timeoutInterval = request.timeoutInterval
             })
             .validate()
-            .responseData { [weak self] dataResponse in
-                guard let sSelf = self else { return }
+            .responseData { dataResponse in
                 let data = dataResponse.data
                 let urlRequest = dataResponse.request
                 let urlResponse = dataResponse.response
@@ -73,26 +72,17 @@ public class Session {
                                             metrics: metrics,
                                             serializationDuration: serializationDuration)
                     completionHandler(.success(response))
+                    RequestManager.shared.cancelRequest(for: request.token)
                 case let .failure(error):
                     completionHandler(.failure(error))
+                    guard let token = request.userDefineToken else { return }
+                    RequestManager.shared.cancelRequest(for: token)
                 }
-                
-         
-                sSelf.cancel(for: request.cancelToken)
             }
-        
-        save(request: afRequest, for: request.cancelToken)
+        request.dataRequest = afRequest
+        RequestManager.shared.save(request: request, for: request.token)
     }
     
-    func save(request: DataRequest, for cancelToken: String) {
-        var requests = self.requests
-        if requests[cancelToken] != nil {
-            return
-        }
-        requests[cancelToken] = request
-        self.requests = requests
-    }
-
     
     private func method(_ method: Method) -> HTTPMethod {
         var m: HTTPMethod = .get
@@ -117,5 +107,10 @@ public class Session {
             m = .trace
         }
         return m
+    }
+}
+extension Session {
+    func cancelAll() {
+        sessionManager.cancelAllRequests()
     }
 }

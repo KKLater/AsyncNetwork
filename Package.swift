@@ -12,11 +12,17 @@ let package = Package(
         .library(
             name: "AsyncNetwork",
             targets: ["AsyncNetwork"]
+        ),
+        .library(
+            name: "AsyncNetworkKit",
+            targets: [
+                "AsyncNetwork"
+            ]
         )
     ],
     dependencies: [
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.7.0"),
-        .package(url: "https://github.com/KKLater/Async.git", from: "0.0.1"),
+        .package(url: "https://github.com/KKLater/Async.git", from: "0.0.2"),
     ],
     targets: [
         .target(
@@ -27,7 +33,10 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ZeusTests",
-            dependencies: ["AsyncNetwork", "AsyncKit"]),
+            name: "AsyncNetworkTests",
+            dependencies: [
+                "AsyncNetwork",
+                .productItem(name: "AsyncKit", package: "Async")
+            ]),
     ]
 )
